@@ -51,13 +51,8 @@ func main() {
 func ready(s *discordgo.Session, event *discordgo.Ready) {
 }
 
-var ch chan int = make(chan int,1)
-
 func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
-    defer func(){<- ch}()
-
 	if strings.HasPrefix(m.Content, "!play") {
-        ch <- 1
 		c, err := s.State.Channel(m.ChannelID)
 		if err != nil {
 			return
@@ -70,6 +65,11 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 
 		for _, vs := range g.VoiceStates {
 			if vs.UserID == m.Author.ID {
+                vc, _ := s.ChannelVoiceJoin(g.ID, vs.ChannelID, false, true)
+                _ = vc.Disconnect()
+
+                buffer = make([][]byte, 0)
+
                 download(m.Content)
                 _ = loadSound()
 				playSound(s, g.ID, vs.ChannelID)
@@ -91,8 +91,11 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 
 		for _, vs := range g.VoiceStates {
 			if vs.UserID == m.Author.ID {
+                buffer = make([][]byte, 0)
+
                 vc, _ := s.ChannelVoiceJoin(g.ID, vs.ChannelID, false, true)
                 _ = vc.Disconnect()
+                
                 _ = os.Remove("out.dca")
 				return
 			}
